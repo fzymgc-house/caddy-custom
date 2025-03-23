@@ -187,13 +187,19 @@ jobs:
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         run: |
+          ls -latr
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
       - name: Inspect image
+        id: inspect
         run: |
           echo "Inspecting image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          DIGESTS=$(docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
+            | jq -r '.manifests[] | select(.platform.os == "linux") | .digest')
+          echo "DIGESTS: $DIGESTS"
+          echo "digests=${DIGESTS}" >> $GITHUB_OUTPUT
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
@@ -205,10 +211,13 @@ jobs:
         env:
           # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
           TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+        run: |
+          for DIGEST in $DIGESTS; do
+            echo "Signing digest: $DIGEST"
+            echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+          done
 
       # Attest build provenance
       - name: Attest
