@@ -221,7 +221,9 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: |
-          for DIGEST in $(echo '${{ steps.inspect.outputs.DIGESTS }} | base64 -d' | jq -r '.[]'); do
+          DIGESTS=$(echo '${{ steps.inspect.outputs.DIGESTS }}'| base64 -d | jq -r '.[]')
+          echo "DIGESTS: $DIGESTS"
+          for DIGEST in $DIGESTS; do
             echo "Signing digest: $DIGEST"
             echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
           done
