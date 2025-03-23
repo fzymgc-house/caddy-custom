@@ -201,11 +201,13 @@ jobs:
         run: |
           echo "Inspecting image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-
+          docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
+              | jq '[.manifests[] | select(.platform.os == "linux") | .digest]' > digests.json
+          echo "DIGESTS:"
+          cat digests.json
           {
             echo 'DIGESTS=<<EOF'
-            docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
-              | jq '[.manifests[] | select(.platform.os == "linux") | .digest]'
+            cat digests.json
             echo 'EOF'
           } >> "${GITHUB_ENV}"
 
