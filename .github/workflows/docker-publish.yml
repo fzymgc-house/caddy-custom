@@ -205,11 +205,7 @@ jobs:
               | jq -c '[.manifests[] | select(.platform.os == "linux") | .digest]' > digests.json
           echo "DIGESTS:"
           cat digests.json
-          {
-            echo 'DIGESTS=<<EOF'
-            cat digests.json
-            echo 'EOF'
-          } >> "${GITHUB_OUTPUT}"
+          echo "DIGESTS=$(base64 < digests.json)" >> "${GITHUB_OUTPUT}"
 
 
       # Sign the resulting Docker image digest except on PRs.
@@ -225,7 +221,7 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: |
-          for DIGEST in $(echo '${{ steps.inspect.outputs.DIGESTS }}' | jq -r '.[]'); do
+          for DIGEST in $(echo '${{ steps.inspect.outputs.DIGESTS }} | base64 -d' | jq -r '.[]'); do
             echo "Signing digest: $DIGEST"
             echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
           done
