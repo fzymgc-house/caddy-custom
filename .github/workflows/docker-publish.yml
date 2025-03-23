@@ -188,6 +188,11 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         run: |
           ls -latr
+          for i in ./* ; do
+            echo "$i"
+            cat "$i"
+          done
+
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
@@ -196,10 +201,14 @@ jobs:
         run: |
           echo "Inspecting image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-          DIGESTS=$(docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
-            | jq -r '.manifests[] | select(.platform.os == "linux") | .digest')
-          echo "DIGESTS: $DIGESTS"
-          echo "DIGESTS='${DIGESTS}'" >> "${GITHUB_ENV}"
+
+          {
+            echo 'DIGESTS=<<EOF'
+            docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
+              | jq '[.manifests[] | select(.platform.os == "linux") | .digest]'
+            echo 'EOF'
+          } >> "${GITHUB_ENV}"
+
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
