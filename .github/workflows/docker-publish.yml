@@ -206,7 +206,7 @@ jobs:
           echo "DIGESTS:"
           cat digests.json
           echo "DIGESTS=$(base64 -w 0 < digests.json)" >> "${GITHUB_OUTPUT}"
-          echo "image_digest=$(jq -r < imageInfo.json | jq '.digest')" >> "${GITHUB_OUTPUT}"
+          echo "image_digest=$(jq -r '.digest' < imageInfo.json )" >> "${GITHUB_OUTPUT}"
 
 
       # Sign the resulting Docker image digest except on PRs.
