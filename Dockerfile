@@ -1,9 +1,7 @@
 FROM caddy:2.9-builder AS builder
 
 RUN xcaddy build \
-    --with github.com/caddy-dns/cloudflare \
-    --with github.com/jasonlovesdoggo/caddy-defender \
-    --with github.com/caddyserver/cache-handler
+  --with github.com/caddy-dns/cloudflare
 
 FROM caddy:2.9
 
