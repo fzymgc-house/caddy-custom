@@ -201,11 +201,12 @@ jobs:
         run: |
           echo "Inspecting image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-          docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
-              | jq -c '[.manifests[] | select(.platform.os == "linux") | .digest]' > digests.json
+          docker buildx imagetools inspect --format "{{ json .Manifest}}" ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} > imageInfo.json
+          cat imageInfo.json | jq -c '[.manifests[] | select(.platform.os == "linux") | .digest]' > digests.json
           echo "DIGESTS:"
           cat digests.json
           echo "DIGESTS=$(base64 -w 0 < digests.json)" >> "${GITHUB_OUTPUT}"
+          echo "image_digest=$(jq -r < imageInfo.json | jq '.digest')" >> "${GITHUB_OUTPUT}"
 
 
       # Sign the resulting Docker image digest except on PRs.
@@ -234,6 +235,6 @@ jobs:
         id: attest
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build-and-push.outputs.digest }}
+          subject-digest: ${{ steps.inspect.outputs.image_digest }}
           push-to-registry: true
           show-summary: true
