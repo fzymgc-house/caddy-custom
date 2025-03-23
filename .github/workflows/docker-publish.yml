@@ -199,7 +199,7 @@ jobs:
           DIGESTS=$(docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
             | jq -r '.manifests[] | select(.platform.os == "linux") | .digest')
           echo "DIGESTS: $DIGESTS"
-          echo "digests=${DIGESTS}" >> $GITHUB_OUTPUT
+          echo "DIGESTS=${DIGESTS}" >> "${GITHUB_ENV}"
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
