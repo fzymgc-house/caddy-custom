@@ -209,7 +209,7 @@ jobs:
             echo 'DIGESTS=<<EOF'
             cat digests.json
             echo 'EOF'
-          } >> "${GITHUB_ENV}"
+          } >> "${GITHUB_OUTPUT}"
 
 
       # Sign the resulting Docker image digest except on PRs.
@@ -225,7 +225,7 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: |
-          for DIGEST in $DIGESTS; do
+          for DIGEST in $(echo '${{ steps.inspect.outputs.DIGESTS }}' | jq -r '.[]'); do
             echo "Signing digest: $DIGEST"
             echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
           done
