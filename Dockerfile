@@ -1,4 +1,4 @@
-ARG CADDY_VERSION=2.9.1@sha256:cd261fc62394f1ff0b44f16eb1d202b4e71d5365c9ec866a4f1a9c5a52da9352
+ARG CADDY_VERSION=2.11.7@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af
 FROM caddy:${CADDY_VERSION}-builder AS builder
 
 RUN xcaddy build \
